@@ -1,0 +1,8 @@
+{
+  "name": "querybook",
+  "autoload": {
+    "psr-4": {
+      "QueryBook\\": "src/QueryBook/"
+    }
+  }
+}
