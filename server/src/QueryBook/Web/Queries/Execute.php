@@ -54,9 +54,10 @@ final class Execute implements Handler {
       return Result::error($message);
     }
 
-    $columns = array_map(function($i) use($result) {
-      return pg_field_name($result, $i);
-    }, range(0, pg_num_fields($result) - 1));
+    $columns = [];
+    for ($i = 0; $i < pg_num_fields($result); ++$i) {
+      $columns[] = pg_field_name($result, $i);
+    }
 
     $rows = [];
     while (($row = pg_fetch_row($result)) !== FALSE) {
