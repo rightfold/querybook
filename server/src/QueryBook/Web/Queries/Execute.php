@@ -18,7 +18,10 @@ final class Execute implements Handler {
     if ($query === NULL) {
       return JsonResponse::create($id, 404);
     } else {
-      return JsonResponse::create($query);
+      $result = new stdClass();
+      list($result->columns, $result->rows) =
+        $this->executeQuery($query);
+      return JsonResponse::create($result);
     }
   }
 
@@ -34,5 +37,20 @@ final class Execute implements Handler {
     } else {
       return $row[0];
     }
+  }
+
+  private function executeQuery(string $query): array {
+    $result = pg_query($this->db, $query);
+
+    $columns = array_map(function($i) use($result) {
+      return pg_field_name($result, $i);
+    }, range(0, pg_num_fields($result) - 1));
+
+    $rows = [];
+    while (($row = pg_fetch_row($result)) !== FALSE) {
+      $rows[] = $row;
+    }
+
+    return [$columns, $rows];
   }
 }
