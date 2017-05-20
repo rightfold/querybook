@@ -1,7 +1,9 @@
 <?php
 namespace QueryBook\Web\Queries;
 
+use ErrorException;
 use QueryBook\Web\Handler;
+use QueryBook\Web\Queries\Execute\Result;
 use Symfony\Component\HttpFoundation\{JsonResponse, Request, Response};
 use stdClass;
 
@@ -18,10 +20,12 @@ final class Execute implements Handler {
     if ($query === NULL) {
       return JsonResponse::create($id, 404);
     } else {
-      $result = new stdClass();
-      list($result->columns, $result->rows) =
-        $this->executeQuery($query);
-      return JsonResponse::create($result);
+      $result = $this->executeQuery($query);
+      $json = new stdClass();
+      $json->message = $result->getMessage();
+      $json->columns = $result->getColumns();
+      $json->rows = $result->getRows();
+      return JsonResponse::create($json);
     }
   }
 
@@ -39,8 +43,16 @@ final class Execute implements Handler {
     }
   }
 
-  private function executeQuery(string $query): array {
-    $result = pg_query($this->db, $query);
+  private function executeQuery(string $query): Result {
+    try {
+      $result = pg_query($this->db, $query);
+    } catch (ErrorException $ex) {
+      $message = $ex->getMessage();
+      if (strpos($message, 'Query failed') === FALSE) {
+        throw $ex;
+      }
+      return Result::error($message);
+    }
 
     $columns = array_map(function($i) use($result) {
       return pg_field_name($result, $i);
@@ -51,6 +63,6 @@ final class Execute implements Handler {
       $rows[] = $row;
     }
 
-    return [$columns, $rows];
+    return Result::ok($columns, $rows);
   }
 }
