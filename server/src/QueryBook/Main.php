@@ -32,7 +32,9 @@ final class Main {
   }
 
   private static function setup(RouteCollector $r) {
-    $webQueryExecute = new Web\Queries\Execute();
+    $db = pg_connect('');
+
+    $webQueryExecute = new Web\Queries\Execute($db);
 
     $r->addRoute('GET', '/queries/{id}/execute', $webQueryExecute);
   }
